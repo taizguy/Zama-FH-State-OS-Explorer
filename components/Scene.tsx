@@ -1,16 +1,17 @@
 import React from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Stars, Grid, Environment } from '@react-three/drei';
+import { OrbitControls, Stars, Grid } from '@react-three/drei';
 import { InteractiveNode } from './InteractiveNode';
-import { APP_DATA } from '../constants';
 import { ActiveNodeState, NodeData } from '../types';
 
 interface SceneProps {
+  nodes: NodeData[];
   activeNode: ActiveNodeState;
   onNodeClick: (node: NodeData) => void;
+  onNodeMove: (id: string, position: [number, number, number]) => void;
 }
 
-export const Scene: React.FC<SceneProps> = ({ activeNode, onNodeClick }) => {
+export const Scene: React.FC<SceneProps> = ({ nodes, activeNode, onNodeClick, onNodeMove }) => {
   return (
     <div className="absolute inset-0 z-0 bg-[#050505]">
       <Canvas camera={{ position: [0, 2, 12], fov: 45 }}>
@@ -38,12 +39,13 @@ export const Scene: React.FC<SceneProps> = ({ activeNode, onNodeClick }) => {
         />
 
         {/* Nodes */}
-        {APP_DATA.map((node) => (
+        {nodes.map((node) => (
           <InteractiveNode
             key={node.id}
             data={node}
             isActive={activeNode?.id === node.id}
             onClick={onNodeClick}
+            onMove={onNodeMove}
           />
         ))}
 

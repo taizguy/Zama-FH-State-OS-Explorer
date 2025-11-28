@@ -1,7 +1,13 @@
+export interface ContentSection {
+  heading: string;
+  body: string[]; // Array of paragraphs
+}
+
 export interface SectionContent {
   title: string;
   subtitle: string;
-  body: string[];
+  intro: string; // High level summary
+  sections: ContentSection[]; // Deep technical dive
   stats?: { label: string; value: string }[];
 }
 
@@ -11,7 +17,7 @@ export interface NodeData {
   color: string;
   icon: string; // Lucide icon name
   content: SectionContent;
-  shape: 'box' | 'sphere' | 'octahedron' | 'torus';
+  shape: 'box' | 'sphere' | 'octahedron' | 'torus' | 'icosahedron' | 'dodecahedron';
 }
 
 export type ActiveNodeState = NodeData | null;
