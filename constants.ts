@@ -1,4 +1,5 @@
-import { NodeData } from './types';
+
+import { NodeData, TourStep } from './types';
 
 // Zama Yellow Hex: #F5E148
 const ZAMA_YELLOW = "#F5E148";
@@ -206,5 +207,65 @@ export const APP_DATA: NodeData[] = [
         }
       ]
     }
+  }
+];
+
+export const TOUR_STEPS: TourStep[] = [
+  // 1. Executive Summary
+  {
+    targetNodeId: "executive-summary",
+    sectionIndex: 'intro',
+    text: "We are trying to build digital nations on public infrastructure. We call them Network States. But there is a fatal flaw in the architecture. Public blockchains like Ethereum are transparent by design. You cannot run a government where every tax record is visible to the world."
+  },
+  {
+    targetNodeId: "executive-summary",
+    sectionIndex: 0,
+    text: "Enter the FHE State Operating System. Zama's framework reconciles the trustlessness of blockchain with the absolute confidentiality required by nations. It enables 'Privacy by Default', computing on data while it remains encrypted."
+  },
+  // 2. Cryptography
+  {
+    targetNodeId: "cryptography",
+    sectionIndex: 'intro',
+    text: "The secret weapon is Fully Homomorphic Encryption. Unlike traditional encryption where data must be decrypted to be processed, FHE allows us to compute directly on the ciphertext."
+  },
+  {
+    targetNodeId: "cryptography",
+    sectionIndex: 0,
+    text: "Historically, FHE was too slow due to cryptographic noise. Zama utilizes TFHE and 'Fast Bootstrapping' to refresh ciphertexts in milliseconds, enabling the infinite computation depth required for a blockchain Virtual Machine."
+  },
+  // 3. Architecture
+  {
+    targetNodeId: "architecture",
+    sectionIndex: 0,
+    text: "This power is packaged into the fhEVM. It looks like Ethereum, but uses a new 'encrypted unsigned integer' data type. Developers write standard Solidity, but the inputs and state remain encrypted, even to the validators."
+  },
+  // 4. Scaling
+  {
+    targetNodeId: "scaling",
+    sectionIndex: 0,
+    text: "To scale this to a global population, Zama follows a hardware strategy. Optimizing software first, then FPGAs, and finally dedicated ASICs targeting 10,000 transactions per second."
+  },
+  {
+    targetNodeId: "scaling",
+    sectionIndex: 1,
+    text: "They also acquired KKRT Labs to build a hybrid architecture. Using Zero-Knowledge Proofs to verify the validity of FHE computations. Privacy for data. ZK for scale."
+  },
+  // 5. Use Cases
+  {
+    targetNodeId: "use-cases",
+    sectionIndex: 0,
+    text: "What does this unlock? Truly secret ballots for governance where coercion is mathematically impossible, as individual votes are never revealed."
+  },
+  {
+    targetNodeId: "use-cases",
+    sectionIndex: 1,
+    text: "It enables confidential identities that prove you are over 18 without revealing your birthdate, and blind auctions that ensure fair price discovery."
+  },
+  // 6. Outro (Wide shot)
+  {
+    targetNodeId: "executive-summary",
+    sectionIndex: 'intro',
+    cameraOffset: [0, 10, 20],
+    text: "The Zama FHE State OS isn't just a privacy update. It is the transition from HTTP to HTTPS for the Web3 world. It is the foundation of the next digital superpower."
   }
 ];

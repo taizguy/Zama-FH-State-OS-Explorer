@@ -1,3 +1,4 @@
+
 import React, { useRef, useState, useMemo } from 'react';
 import { useFrame, useThree, ThreeEvent } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
@@ -14,11 +15,12 @@ interface InteractiveNodeProps {
 export const InteractiveNode: React.FC<InteractiveNodeProps> = ({ data, isActive, onClick, onMove }) => {
   const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
+  const pulseRef = useRef<THREE.Mesh>(null);
   
   const [hovered, setHovered] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   
-  // Logic Refs (avoid state for high-frequency physics/event logic)
+  // Logic Refs
   const dragStartPos = useRef<{ x: number, y: number } | null>(null);
   const isDraggingRef = useRef(false);
   
@@ -29,17 +31,31 @@ export const InteractiveNode: React.FC<InteractiveNodeProps> = ({ data, isActive
   const { camera, raycaster } = useThree();
 
   useFrame((state) => {
+    const t = state.clock.getElapsedTime();
+
     // 1. Handle Floating Animation (Only applies to inner mesh)
     if (meshRef.current) {
       meshRef.current.rotation.x += 0.005;
       meshRef.current.rotation.y += 0.005;
 
       // Floating - relative to group
-      const t = state.clock.getElapsedTime();
       meshRef.current.position.y = Math.sin(t + data.position[0]) * 0.2;
     }
 
-    // 2. Sync group position to prop when not dragging
+    // 2. Pulse Animation (Forcefield effect when active)
+    if (pulseRef.current) {
+      if (isActive) {
+        pulseRef.current.visible = true;
+        const scale = 1.2 + Math.sin(t * 3) * 0.1;
+        pulseRef.current.scale.set(scale, scale, scale);
+        pulseRef.current.rotation.y -= 0.02;
+        (pulseRef.current.material as THREE.MeshBasicMaterial).opacity = 0.3 + Math.sin(t * 5) * 0.1;
+      } else {
+        pulseRef.current.visible = false;
+      }
+    }
+
+    // 3. Sync group position to prop when not dragging
     if (groupRef.current && !isDraggingRef.current) {
       groupRef.current.position.lerp(new THREE.Vector3(...data.position), 0.1);
     }
@@ -49,14 +65,12 @@ export const InteractiveNode: React.FC<InteractiveNodeProps> = ({ data, isActive
     e.stopPropagation();
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     
-    // Store screen coordinates to check for "click" vs "drag" later
     dragStartPos.current = { x: e.clientX, y: e.clientY };
     
     isDraggingRef.current = true;
-    setIsDragging(true); // Trigger render for visual feedback
+    setIsDragging(true);
 
     if (groupRef.current) {
-      // Setup drag plane
       const normal = new THREE.Vector3();
       camera.getWorldDirection(normal).negate(); 
       dragPlane.setFromNormalAndCoplanarPoint(normal, groupRef.current.position);
@@ -91,17 +105,14 @@ export const InteractiveNode: React.FC<InteractiveNodeProps> = ({ data, isActive
     isDraggingRef.current = false;
     setIsDragging(false);
 
-    // Calculate Movement Distance
     if (dragStartPos.current) {
       const dx = e.clientX - dragStartPos.current.x;
       const dy = e.clientY - dragStartPos.current.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
 
-      // If moved less than 4 pixels, treat as CLICK
       if (dist < 4) {
         onClick(data);
       } else {
-        // Otherwise, treat as MOVE (Drop)
         if (groupRef.current) {
           onMove(data.id, [
             groupRef.current.position.x,
@@ -111,7 +122,6 @@ export const InteractiveNode: React.FC<InteractiveNodeProps> = ({ data, isActive
         }
       }
     }
-    
     dragStartPos.current = null;
   };
 
@@ -129,6 +139,7 @@ export const InteractiveNode: React.FC<InteractiveNodeProps> = ({ data, isActive
 
   return (
     <group ref={groupRef} position={new THREE.Vector3(...data.position)}>
+      {/* Core Mesh */}
       <mesh
         ref={meshRef}
         onPointerDown={handlePointerDown}
@@ -148,10 +159,16 @@ export const InteractiveNode: React.FC<InteractiveNodeProps> = ({ data, isActive
           color={isActive ? "#F5E148" : (isDragging ? "#FFF" : (hovered ? "#FFF" : data.color))}
           wireframe={true}
           emissive={isActive ? "#F5E148" : (hovered || isDragging ? "#444" : "#000")}
-          emissiveIntensity={isActive ? 0.8 : 0.2}
+          emissiveIntensity={isActive ? 1 : 0.2}
           transparent
           opacity={isDragging ? 0.8 : 1}
         />
+      </mesh>
+
+      {/* Processing Pulse Effect (Only visible when active) */}
+      <mesh ref={pulseRef} visible={false}>
+         {renderGeometry()}
+         <meshBasicMaterial color="#F5E148" wireframe transparent opacity={0.2} />
       </mesh>
 
       {/* Connection Line to floor */}
@@ -165,7 +182,7 @@ export const InteractiveNode: React.FC<InteractiveNodeProps> = ({ data, isActive
         <div 
           className={`
             whitespace-nowrap px-3 py-1 text-sm font-bold uppercase tracking-widest backdrop-blur-md transition-all duration-300 select-none
-            ${isActive ? 'bg-[#F5E148] text-black scale-110' : 'bg-black/50 text-[#F5E148] border border-[#F5E148]'}
+            ${isActive ? 'bg-[#F5E148] text-black scale-110 shadow-[0_0_20px_rgba(245,225,72,0.5)]' : 'bg-black/50 text-[#F5E148] border border-[#F5E148]'}
             ${isDragging ? 'opacity-50' : 'opacity-100'}
           `}
           style={{ fontFamily: 'Space Mono' }}

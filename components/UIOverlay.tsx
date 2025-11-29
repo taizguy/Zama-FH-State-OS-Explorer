@@ -1,13 +1,64 @@
-import React from 'react';
+
+import React, { useEffect, useState, useRef } from 'react';
 import { ActiveNodeState } from '../types';
 import { X, Cpu, Shield, Zap, Lock, Users, Scale } from 'lucide-react';
 
 interface UIOverlayProps {
   activeNode: ActiveNodeState;
   onClose: () => void;
+  highlightSectionIndex?: number | 'intro' | null;
 }
 
-export const UIOverlay: React.FC<UIOverlayProps> = ({ activeNode, onClose }) => {
+// Scramble Text Component
+const DecryptingText: React.FC<{ text: string; className?: string }> = ({ text, className }) => {
+  const [display, setDisplay] = useState('');
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+
+  useEffect(() => {
+    let iteration = 0;
+    const interval = setInterval(() => {
+      setDisplay(
+        text
+          .split("")
+          .map((letter, index) => {
+            if (index < iteration) {
+              return text[index];
+            }
+            return chars[Math.floor(Math.random() * chars.length)];
+          })
+          .join("")
+      );
+
+      if (iteration >= text.length) {
+        clearInterval(interval);
+      }
+
+      iteration += 1 / 2; // Speed
+    }, 15);
+
+    return () => clearInterval(interval);
+  }, [text]);
+
+  return <span className={className}>{display}</span>;
+};
+
+export const UIOverlay: React.FC<UIOverlayProps> = ({ activeNode, onClose, highlightSectionIndex }) => {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  
+  // Auto-scroll to highlighted section
+  useEffect(() => {
+    if (highlightSectionIndex !== null && highlightSectionIndex !== undefined && scrollRef.current) {
+        // Simple timeout to allow render
+        setTimeout(() => {
+            const elId = highlightSectionIndex === 'intro' ? 'section-intro' : `section-${highlightSectionIndex}`;
+            const el = document.getElementById(elId);
+            if (el && scrollRef.current) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 100);
+    }
+  }, [highlightSectionIndex, activeNode]);
+
   if (!activeNode) return null;
 
   const IconComponent = () => {
@@ -42,7 +93,7 @@ export const UIOverlay: React.FC<UIOverlayProps> = ({ activeNode, onClose }) => 
             </div>
             <div>
               <h2 className="text-black font-bold text-2xl uppercase tracking-tighter leading-none" style={{ fontFamily: 'Space Mono' }}>
-                {activeNode.content.title}
+                <DecryptingText text={activeNode.content.title} />
               </h2>
               <p className="text-black/70 text-xs font-bold uppercase tracking-[0.2em] mt-1">
                 REF_ID: {activeNode.id.toUpperCase()}
@@ -58,33 +109,54 @@ export const UIOverlay: React.FC<UIOverlayProps> = ({ activeNode, onClose }) => 
         </div>
 
         {/* Scrollable Content Body */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-8">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto custom-scrollbar p-8">
           <h3 className="text-xl md:text-3xl font-bold mb-8 text-[#F5E148] leading-tight" style={{ fontFamily: 'Space Mono' }}>
-            {activeNode.content.subtitle}
+             <DecryptingText text={activeNode.content.subtitle} />
           </h3>
           
           {/* Intro Paragraph */}
-          <div className="mb-10 text-base md:text-lg leading-relaxed font-light text-white/90 border-b border-[#333] pb-8">
+          <div 
+            id="section-intro"
+            className={`
+                mb-10 text-base md:text-lg leading-relaxed font-light border-b border-[#333] pb-8 transition-all duration-500
+                ${highlightSectionIndex === 'intro' 
+                    ? 'text-white border-l-4 border-[#F5E148] pl-4 bg-[#F5E148]/5 shadow-[0_0_20px_rgba(245,225,72,0.1)]' 
+                    : (highlightSectionIndex !== null && highlightSectionIndex !== undefined ? 'text-gray-600 blur-[0.5px]' : 'text-white/90')}
+            `}
+          >
             {activeNode.content.intro}
           </div>
 
           {/* Deep Dive Sections */}
           <div className="space-y-10">
-            {activeNode.content.sections.map((section, idx) => (
-              <div key={idx} className="group">
-                <h4 className="text-[#F5E148] font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
-                  <span className="text-xs bg-[#F5E148] text-black px-1.5 py-0.5">0{idx + 1}</span>
-                  {section.heading}
-                </h4>
-                <div className="space-y-4 text-gray-300 text-sm md:text-base leading-relaxed">
-                  {section.body.map((paragraph, pIdx) => (
-                    <p key={pIdx} className="pl-4 border-l-2 border-[#333] group-hover:border-[#F5E148]/50 transition-colors duration-300">
-                      {paragraph}
-                    </p>
-                  ))}
+            {activeNode.content.sections.map((section, idx) => {
+               const isHighlighted = highlightSectionIndex === idx;
+               const isDimmed = highlightSectionIndex !== null && highlightSectionIndex !== undefined && !isHighlighted && highlightSectionIndex !== 'intro';
+
+               return (
+                <div 
+                    key={idx} 
+                    id={`section-${idx}`}
+                    className={`
+                        group transition-all duration-500
+                        ${isHighlighted ? 'scale-[1.02] border-l-4 border-[#F5E148] pl-6 py-2' : ''}
+                        ${isDimmed ? 'opacity-30 blur-[1px]' : 'opacity-100'}
+                    `}
+                >
+                    <h4 className="text-[#F5E148] font-bold uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <span className="text-xs bg-[#F5E148] text-black px-1.5 py-0.5">0{idx + 1}</span>
+                    {section.heading}
+                    </h4>
+                    <div className="space-y-4 text-gray-300 text-sm md:text-base leading-relaxed">
+                    {section.body.map((paragraph, pIdx) => (
+                        <p key={pIdx} className={`transition-colors duration-300 ${isHighlighted ? 'text-white' : ''}`}>
+                            {paragraph}
+                        </p>
+                    ))}
+                    </div>
                 </div>
-              </div>
-            ))}
+               );
+            })}
           </div>
 
           {/* Stats Grid */}
@@ -99,7 +171,7 @@ export const UIOverlay: React.FC<UIOverlayProps> = ({ activeNode, onClose }) => 
             </div>
           )}
           
-          <div className="h-10"></div> {/* Spacer */}
+          <div className="h-20"></div> {/* Spacer */}
         </div>
 
         {/* Footer */}

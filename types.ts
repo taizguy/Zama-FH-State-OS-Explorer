@@ -1,3 +1,4 @@
+
 export interface ContentSection {
   heading: string;
   body: string[]; // Array of paragraphs
@@ -21,3 +22,10 @@ export interface NodeData {
 }
 
 export type ActiveNodeState = NodeData | null;
+
+export interface TourStep {
+  targetNodeId: string;
+  sectionIndex: number | 'intro'; // 'intro' for the top summary, number for specific section
+  text: string; // The specific script for this chunk
+  cameraOffset?: [number, number, number];
+}
